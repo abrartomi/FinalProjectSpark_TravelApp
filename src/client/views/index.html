@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <!-- Meta description -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=REM:ital,wght@0,200;0,300;0,400;0,500;0,600&display=swap" rel="stylesheet" />
+
+  <title>Travel App</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <div class="container">
+    <header class="site-header">
+      <h1 class="site-title">Trip Planner</h1>
+    </header>
+    <div id="form_row">
+      <form onsubmit="return Client.handleSubmit(event)" method="POST">
+        <div class="input-group">
+          <input type="text" name="city" id="city" placeholder="Enter your Destination" />
+        </div>
+        <div id="city_error" class="error" role="alert"></div>
+        <div class="input-group">
+          <input type="date" name="date" id="flightDate" />
+        </div>
+        <div id="date_error" class="error" role="alert"></div>
+        <button type="submit" class="btn">Submit</button>
+      </form>
+    </div>
+
+    <div class="flight_data">
+      <h2 id="Rdays"></h2>
+      <p class="cityName"></p>
+      <p class="temp"></p>
+      <p class="max-temp"></p>
+      <p class="min-temp"></p>
+      <p class="weather"></p>
+      <div class="cityPic"></div>
+    </div>
+  </div>
+
+  
+  <!-- External libraries -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</body>
+
+</html>
