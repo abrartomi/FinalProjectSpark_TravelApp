@@ -2,26 +2,28 @@ const express = require("express");
 const app = express();
 const cors = require("cors");
 const axios = require("axios");
-require("dotenv").config(); 
+require("dotenv").config();
 
 app.use(express.json());
-app.use(express.static("dist")); 
+app.use(express.static("dist"));
 app.use(cors());
 
 const port = 8000;
 
-const username = process.env.USER_NAME; 
+const username = process.env.USER_NAME;
 const weather_key = process.env.WEATHER_KEY;
 const pixabay_key = process.env.PIXABAY_KEY;
 
 app.get("/", (req, res) => {
-  res.sendFile(__dirname + "/dist/index.html"); 
+  res.sendFile(__dirname + "/dist/index.html");
 });
 
 
 const getCityLoc = async (city, username) => {
   try {
-    const response = await axios.get(`https://secure.geonames.org/searchJSON?q=${city}&maxRows=1&username=${username}`);
+    const response = await axios.get(
+      `https://secure.geonames.org/searchJSON?q=${city}&maxRows=1&username=${username}`
+    );
     const { geonames } = response.data;
     const { name, lat, lng } = geonames[0];
     return { name, lat, lng };
@@ -30,35 +32,43 @@ const getCityLoc = async (city, username) => {
   }
 };
 
-// Function to get city picture using Pixabay API
+
 const getCityPic = async (city, key) => {
   try {
     console.log(city, key, " getCityPic");
-    const { data } = await axios.get(`https://pixabay.com/api/?key=${key}&q=${city}&image_type=photo`);
-    const image = data.hits[0] ? data.hits[0].webformatURL : "https://unsplash.com/photos/beige-concrete-building-near-cars-HhmCIJTLuGY";
+    const { data } = await axios.get(
+      `https://pixabay.com/api/?key=${key}&q=${city}&image_type=photo`
+    );
+    const image = data.hits[0]
+      ? data.hits[0].webformatURL
+      : "https://unsplash.com/photos/beige-concrete-building-near-cars-HhmCIJTLuGY";
     return { image };
   } catch (error) {
     throw new Error("Error fetching city picture");
   }
 };
 
-// Function to get weather data using Weatherbit API
+
 const getWeather = async (lat, lng, Rdays, key) => {
   try {
     if (Rdays < 0) {
       return {
         message: "Date cannot be in the past",
-        error: true
+        error: true,
       };
     }
 
     if (Rdays > 0 && Rdays <= 7) {
-      const { data } = await axios.get(`https://api.weatherbit.io/v2.0/current?lat=${lat}&lon=${lng}&units=M&key=${key}`);
+      const { data } = await axios.get(
+        `https://api.weatherbit.io/v2.0/current?lat=${lat}&lon=${lng}&units=M&key=${key}`
+      );
       const { weather, temp } = data.data[data.data.length - 1];
       const { description } = weather;
       return { description, temp };
     } else if (Rdays > 7) {
-      const { data } = await axios.get(`https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lng}&units=M&days=${Rdays}&key=${key}`);
+      const { data } = await axios.get(
+        `https://api.weatherbit.io/v2.0/forecast/daily?lat=${lat}&lon=${lng}&units=M&days=${Rdays}&key=${key}`
+      );
       const { weather, temp, app_max_temp, app_min_temp } = data.data[data.data.length - 1];
       const { description } = weather;
       return { description, temp, app_max_temp, app_min_temp };
@@ -68,9 +78,9 @@ const getWeather = async (lat, lng, Rdays, key) => {
   }
 };
 
-// Route to get city location
+
 app.post("/getCityLoc", async (req, res) => {
-  console.log(req.body); // Log the full body for debugging
+  console.log(req.body); 
   const { city } = req.body;
 
   if (!city) {
@@ -79,14 +89,14 @@ app.post("/getCityLoc", async (req, res) => {
 
   try {
     const location = await getCityLoc(city, username);
-    res.send(location); // Send the location data back to the client
+    res.send(location); 
   } catch (error) {
     console.error("Error fetching city location:", error);
     res.status(500).send({ error: "Error fetching city location" });
   }
 });
 
-// Route to get weather data
+
 app.post("/getWeather", async (req, res) => {
   console.log("Received weather request:");
   console.log(req.body);
@@ -101,11 +111,11 @@ app.post("/getWeather", async (req, res) => {
   }
 });
 
-// Route to get city picture
+
 app.post("/getCityPic", async (req, res) => {
   console.log("Received city picture request:");
   const { city_name } = req.body;
-  console.log(city_name, "server.js"); // Should log the city name sent from the client
+  console.log(city_name, "server.js"); 
 
   if (!city_name) {
     return res.status(400).send({ error: "City name is required" });
@@ -113,12 +123,12 @@ app.post("/getCityPic", async (req, res) => {
 
   try {
     const image = await getCityPic(city_name, pixabay_key);
-    res.send(image); // Send the image object back to the client
+    res.send(image); 
   } catch (error) {
     console.error("Error fetching city picture:", error);
     res.status(500).send({ error: "Error fetching city picture" });
   }
 });
 
-// Start the server
+
 app.listen(port, () => console.log(`Server is listening on port ${port}`));
