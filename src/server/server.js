@@ -19,7 +19,7 @@ app.get("/", (req, res) => {
 });
 
 
-const getCityLoc = async (city, username) => {
+const getLoc = async (city, username) => {
   try {
     const response = await axios.get(
       `https://secure.geonames.org/searchJSON?q=${city}&maxRows=1&username=${username}`
@@ -33,9 +33,9 @@ const getCityLoc = async (city, username) => {
 };
 
 
-const getCityPic = async (city, key) => {
+const getPic = async (city, key) => {
   try {
-    console.log(city, key, " getCityPic");
+    console.log(city, key, " getPic");
     const { data } = await axios.get(
       `https://pixabay.com/api/?key=${key}&q=${city}&image_type=photo`
     );
@@ -79,7 +79,7 @@ const getWeather = async (lat, lng, Rdays, key) => {
 };
 
 
-app.post("/getCityLoc", async (req, res) => {
+app.post("/getLoc", async (req, res) => {
   console.log(req.body); 
   const { city } = req.body;
 
@@ -88,7 +88,7 @@ app.post("/getCityLoc", async (req, res) => {
   }
 
   try {
-    const location = await getCityLoc(city, username);
+    const location = await getLoc(city, username);
     res.send(location); 
   } catch (error) {
     console.error("Error fetching city location:", error);
@@ -112,7 +112,7 @@ app.post("/getWeather", async (req, res) => {
 });
 
 
-app.post("/getCityPic", async (req, res) => {
+app.post("/getPic", async (req, res) => {
   console.log("Received city picture request:");
   const { city_name } = req.body;
   console.log(city_name, "server.js"); 
@@ -122,7 +122,7 @@ app.post("/getCityPic", async (req, res) => {
   }
 
   try {
-    const image = await getCityPic(city_name, pixabay_key);
+    const image = await getPic(city_name, pixabay_key);
     res.send(image); 
   } catch (error) {
     console.error("Error fetching city picture:", error);
