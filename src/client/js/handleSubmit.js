@@ -1,18 +1,19 @@
 import axios from "axios";
-import Swal from "sweetalert2"; 
+import Swal from "sweetalert2";
 
-const form = document.querySelector("form");
-const dateInp = document.querySelector("#flightDate");
-const cityInp = document.querySelector("#city");
+// Form elements
+const flightForm = document.querySelector("form");
+const departureDateInput = document.querySelector("#flightDate");
+const destinationInput = document.querySelector("#city");
 
-const handleSubmit = async (e) => {
-    e.preventDefault();
+const handleFormSubmit = async (event) => {
+    event.preventDefault();
 
-    const city = cityInp.value.trim();
-    const date = dateInp.value;
+    const destination = destinationInput.value.trim();
+    const departureDate = departureDateInput.value;
 
-    
-    if (!city) {
+    // Check if city input is empty
+    if (!destination) {
         Swal.fire({
             icon: 'error',
             title: 'Oops...',
@@ -21,8 +22,8 @@ const handleSubmit = async (e) => {
         return;
     }
 
-   
-    if (!date) {
+    // Check if date input is empty
+    if (!departureDate) {
         Swal.fire({
             icon: 'error',
             title: 'Oops...',
@@ -31,15 +32,10 @@ const handleSubmit = async (e) => {
         return;
     }
 
-    console.log("I am working fine"); 
+    const remainingDays = calculateRemainingDays(departureDate);
 
-    
-    const Location = await getCityLoc(city); 
-    const { name, lng, lat } = Location;
-    const Rdays = getRdays(date);
-
-    
-    if (Rdays < 0) {
+    // Check for past date
+    if (remainingDays < 0) {
         Swal.fire({
             icon: 'error',
             title: 'Invalid Date',
@@ -48,75 +44,84 @@ const handleSubmit = async (e) => {
         return;
     }
 
-    
-    const Weather = await getWeather(lat, lng, Rdays);
-    const pic = await getCityPic(name);
-    console.log("Pic", pic);
+    try {
+        const locationData = await fetchCityLocation(destination); 
+        const { name, longitude, latitude } = locationData;
 
-    
-    updateUI(Rdays, Location.name, pic, Weather);
+        const weatherData = await fetchWeatherData(latitude, longitude, remainingDays);
+        const cityImage = await fetchCityImage(name);
+
+        updateUserInterface(remainingDays, locationData.name, cityImage, weatherData);
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'There was an error fetching data. Please try again later.',
+        });
+    }
 };
 
-
-const getCityLoc = async (city) => {
+// Fetch city location data from server
+const fetchCityLocation = async (city) => {
     const { data } = await axios.post("http://localhost:8000/getCityLoc", { city }, {
         headers: { "Content-Type": "application/json" },
     });
     return data;
 };
 
-
-const getRdays = (date) => {
-    const startDate = new Date();
-    const endDate = new Date(date);
-    const timeDiff = endDate.getTime() - startDate.getTime();
-    return Math.ceil(timeDiff / (1000 * 3600 * 24));
+// Calculate the remaining days from the selected date
+const calculateRemainingDays = (date) => {
+    const today = new Date();
+    const selectedDate = new Date(date);
+    const timeDifference = selectedDate.getTime() - today.getTime();
+    return Math.ceil(timeDifference / (1000 * 3600 * 24));
 };
 
-
-const getWeather = async (lat, lng, Rdays) => {
-    const { data } = await axios.post("http://localhost:8000/getWeather", { lat, lng, Rdays });
+// Fetch weather data from server
+const fetchWeatherData = async (latitude, longitude, remainingDays) => {
+    const { data } = await axios.post("http://localhost:8000/getWeather", { lat: latitude, lng: longitude, Rdays: remainingDays });
     return data;
 };
 
-
-const getCityPic = async (city_name) => {
-    const { data } = await axios.post("http://localhost:8000/getCityPic", { city_name });
+// Fetch city image from server
+const fetchCityImage = async (cityName) => {
+    const { data } = await axios.post("http://localhost:8000/getCityPic", { city_name: cityName });
     return data.image;
 };
 
-
-const updateDaysInfo = (Rdays) => {
-    document.querySelector("#Rdays").innerHTML = `Your trip starts in ${Rdays} days from now`;
+// Update the remaining days
+const updateDaysRemaining = (remainingDays) => {
+    document.querySelector("#Rdays").innerHTML = `Your trip starts in ${remainingDays} days.`;
 };
 
-
-const updateWeatherInfo = (Rdays, weather) => {
-    const weatherInfo = Rdays > 7 
+// Update the weather details in the UI
+const updateWeatherDetails = (remainingDays, weather) => {
+    const weatherMessage = remainingDays > 7 
         ? `Weather is: ${weather.description}` 
         : `Weather is expected to be: ${weather.description}`;
     
-    document.querySelector(".weather").innerHTML = weatherInfo;
-    document.querySelector(".temp").innerHTML = `Temperature: ${weather.temp} &degC`;
+    document.querySelector(".weather").innerHTML = weatherMessage;
+    document.querySelector(".temp").innerHTML = `Temperature: ${weather.temp} &deg;C`;
     
-    if (Rdays > 7) {
-        document.querySelector(".max-temp").innerHTML = `Max-Temp: ${weather.app_max_temp}&degC`;
-        document.querySelector(".min-temp").innerHTML = `Min-Temp: ${weather.app_min_temp}&degC`;
+    if (remainingDays > 7) {
+        document.querySelector(".max-temp").innerHTML = `Max-Temp: ${weather.app_max_temp}&deg;C`;
+        document.querySelector(".min-temp").innerHTML = `Min-Temp: ${weather.app_min_temp}&deg;C`;
     }
 };
 
-
-const updateCityInfo = (city, pic) => {
+// Update the city details in the UI
+const updateCityDetails = (city, cityImage) => {
     document.querySelector(".cityName").innerHTML = `Location: ${city}`;
-    document.querySelector(".cityPic").innerHTML = `<img src="${pic}" alt="An image describing the city's nature">`;
+    document.querySelector(".cityPic").innerHTML = `<img src="${cityImage}" alt="An image representing the city's scenery">`;
 };
 
-
-const updateUI = (Rdays, city, pic, weather) => {
-    updateDaysInfo(Rdays);
-    updateWeatherInfo(Rdays, weather);
-    updateCityInfo(city, pic);
+// Update the UI with all relevant information
+const updateUserInterface = (remainingDays, city, cityImage, weather) => {
+    updateDaysRemaining(remainingDays);
+    updateWeatherDetails(remainingDays, weather);
+    updateCityDetails(city, cityImage);
     document.querySelector(".flight_data").style.display = "block";
 };
 
-export { handleSubmit };
+export { handleFormSubmit, fetchCityLocation, calculateRemainingDays, fetchWeatherData, fetchCityImage };

@@ -1,60 +1,53 @@
 import axios from 'axios';
-import Swal from 'sweetalert2';
-import { handleSubmit } from '../src/client/js/handleSubmit';
-
-
-document.body.innerHTML = `
-  <form>
-    <input id="flightDate" value="2024-12-01">
-    <input id="city" value="New York">
-    <button type="submit">Submit</button>
-  </form>
-  <div id="Rdays"></div>
-  <div class="weather"></div>
-  <div class="temp"></div>
-  <div class="max-temp"></div>
-  <div class="min-temp"></div>
-  <div class="cityName"></div>
-  <div class="cityPic"></div>
-  <div class="flight_data"></div>
-`;
+import { handleFormSubmit, fetchCityLocation, calculateRemainingDays, fetchWeatherData, fetchCityImage } from '../src/client/js/handleSubmit'; // Adjust the import path accordingly
 
 jest.mock('axios');
-jest.mock('sweetalert2');
 
-describe('handleSubmit', () => {
-  beforeEach(() => {
-   
-    jest.resetAllMocks();
-  });
+describe('Travel App Functions', () => {
+    afterEach(() => {
+        jest.clearAllMocks(); // Clear mock calls after each test
+    });
 
-  test('should handle form submission', async () => {
-   
-  });
+    test('fetchCityLocation should return correct data', async () => {
+        const cityName = 'New York';
+        const mockResponse = { data: { name: 'New York', longitude: -74.006, latitude: 40.7128 } };
 
-  test('should handle missing city', async () => {
-    
-    document.querySelector("#city").value = '';
-   
-  });
+        axios.post.mockResolvedValueOnce(mockResponse);
 
-  test('should handle missing date', async () => {
-   
-    document.querySelector("#flightDate").value = '';
-   
-  });
+        const data = await fetchCityLocation(cityName);
+        expect(data).toEqual(mockResponse.data);
+        expect(axios.post).toHaveBeenCalledWith("http://localhost:8000/getCityLoc", { city: cityName }, { headers: { "Content-Type": "application/json" } });
+    });
 
-  test('should handle invalid date', async () => {
-    
-    document.querySelector("#flightDate").value = '2023-01-01';
-    
-  });
+    test('calculateRemainingDays should return the correct number of days', () => {
+        const today = new Date();
+        const futureDate = new Date(today);
+        futureDate.setDate(today.getDate() + 5); // 5 days in the future
+
+        const days = calculateRemainingDays(futureDate.toISOString().split('T')[0]);
+        expect(days).toBe(5);
+    });
+
+    test('fetchWeatherData should return correct data', async () => {
+        const mockResponse = { data: { temp: 25, app_max_temp: 30, app_min_temp: 20, description: 'Sunny' } };
+        const latitude = 40.7128;
+        const longitude = -74.006;
+
+        axios.post.mockResolvedValueOnce(mockResponse);
+
+        const data = await fetchWeatherData(latitude, longitude, 5);
+        expect(data).toEqual(mockResponse.data);
+        expect(axios.post).toHaveBeenCalledWith("http://localhost:8000/getWeather", { lat: latitude, lng: longitude, Rdays: 5 });
+    });
+
+    test('fetchCityImage should return correct image URL', async () => {
+        const mockResponse = { data: { image: 'http://example.com/city.jpg' } };
+        const cityName = 'New York';
+
+        axios.post.mockResolvedValueOnce(mockResponse);
+
+        const image = await fetchCityImage(cityName);
+        expect(image).toBe(mockResponse.data.image);
+        expect(axios.post).toHaveBeenCalledWith("http://localhost:8000/getCityPic", { city_name: cityName });
+    });
 });
-axios.post.mockResolvedValue({
-    data: {
-      name: 'New York',
-      lng: -74.006,
-      lat: 40.7128
-    }
-  });
-  Swal.fire = jest.fn();

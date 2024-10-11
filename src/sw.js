@@ -1,5 +1,5 @@
-const CACHE_NAME = "travel-app-cache-v1";
-const urlsToCache = [
+const CACHE_ID = "travel-app-cache-v1";
+const resourcesToCache = [
   "/",
   "/index.html",
   "/styles.css",
@@ -10,9 +10,9 @@ const urlsToCache = [
 // Install event - caching the app shell
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log("Opened cache");
-      return cache.addAll(urlsToCache);
+    caches.open(CACHE_ID).then((cache) => {
+      console.log("Cache opened successfully");
+      return cache.addAll(resourcesToCache);
     })
   );
 });
@@ -20,20 +20,20 @@ self.addEventListener("install", (event) => {
 // Fetch event - serving cached content when offline
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+    caches.match(event.request).then((cachedResponse) => {
+      return cachedResponse || fetch(event.request);
     })
   );
 });
 
 // Activate event - removing old caches
 self.addEventListener("activate", (event) => {
-  const cacheWhitelist = [CACHE_NAME];
+  const cacheAllowlist = [CACHE_ID];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (!cacheWhitelist.includes(cacheName)) {
+          if (!cacheAllowlist.includes(cacheName)) {
             return caches.delete(cacheName);
           }
         })
